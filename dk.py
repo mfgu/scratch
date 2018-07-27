@@ -16,8 +16,6 @@ p.add_option('-p', '--np', dest='np', type='int',
              default=1, help='number of processors')
 p.add_option('-m', '--nmax', dest='nmax', type='int',
              default=5, help='max principle quantum number')
-p.add_option('-i', '--imax', dest='imax', type='int',
-             default=0, help='inner shell excitation')
 p.add_option('-v', '--vmax', dest='vmax', type='int',
              default=-8, help='virtual orbital n max')
 p.add_option('--n2max', dest='n2max', type='int',
@@ -29,17 +27,13 @@ p.add_option('-s', '--nsp', dest='nsp', type='int',
 p.add_option('-t', '--ntr', dest='ntr', type='int',
              default=0, help='mbpt transition rate option')
 p.add_option('-k', '--nk', dest='nk', type='int',
-             default=0, help='k shell max excitation')
+             default=-1, help='k shell max excitation')
 p.add_option('-c', '--csf', dest='csf', type='int',
              default=0, help='convert to sfac input file')
 p.add_option('-a', '--mmax', dest='mm', type='float',
              default=0, help='maximum memory usage for radial integra caching')
 p.add_option('-d', '--dry', dest='dry', type='int',
              default=0, help='dry run, stop after configuration setup')
-p.add_option('--m3d', dest='m3d', type='int',
-             default=0, help='max n of double excitation of M-shell')
-p.add_option('--m3i', dest='m3i', type='int',
-             default=0, help='max n of double excitation of L-shell')
 p.add_option('--oc', dest='oc', type='string',
              default='ic', help='configuration for potential optimization')
 p.add_option('--om', dest='om', type='int',
@@ -117,13 +111,17 @@ p.add_option('--rand', dest='rand', type='int',
 p.add_option('--warn', dest='warn', type='float',
              default=0.5, help='warn large mbpt terms')
 p.add_option('--ignore', dest='ignore', type='float',
-             default=-1, help='ignore large mbpt terms')
+             default=50.0, help='ignore large mbpt terms')
 p.add_option('--rc', dest='rc', type='string',
              default='', help='read config list')
 p.add_option('--rh', dest='rh', type='string',
              default='', help='read hamilton')
 p.add_option('--ic', dest='ic', type='string',
              default='', help='individual config')
+p.add_option('--itr', dest='itr', type='int',
+             default=0, help='compute CI transition rates')
+p.add_option('--ice', dest='ice', type='int',
+             default=0, help='compute CI excitation')
 
 (opts, args) = p.parse_args()
 
@@ -153,7 +151,7 @@ SetAtom(asym)
 
 n = opts.n    
 nmax = opts.nmax
-pref='%s%02d'%(asym, n+10)
+pref='%s%02d'%(asym, n)
 if odir != '':
     pref='%s/%s'%(odir,pref)
     
@@ -164,80 +162,29 @@ elif opts.ci > 0:
 else:
     p0 = pref
 
-opts.m3d = min(opts.m3d, opts.nmax)
-opts.m3i = min(opts.m3i, opts.imax)
-
-m3d=opts.m3d
-n3d = n-8
-if n3d < 0:
-    n3d = 0
-Print('n3d max: %d %d %d'%(n3d,m3d,opts.m3i))
-
 if opts.rc != '':
     ReadConfig(opts.rc)
 
 gc=[]
 gc.append('g')
 if opts.rc == '' :
-    if n < 3:
-        Config('g', '1s2 2*8 3s%d'%n)
-    elif n < 9:
-        Config('g', '1s2 2*8 3s2 3p%d'%(n-2))
-    else:
-        Config('g', '1s2 2*8 3s2 3p6 3d%d'%n3d)
+    Config('g', '1s%d'%n)
+        
 gv=['g']
-v4=[]
-for m in range(3, nmax+1):
-    bc = ['3s', '3p', '3d']
-    for k0 in range(3):
+v2=[]
+v3=[]
+for m in range(2, nmax+1):
+    bc = ['1s']
+    for k0 in range(1):
         for k1 in range(m):
-            if m == 3 and k1 <= k0:
-                continue
-            gn = 'g_n3k%d_n%dk%d'%(k0,m,k1)
+            gn = 'g_n1k%d_n%dk%d'%(k0,m,k1)
             gc.append(gn)
-            if m == 3:
-                gv.append(gn)
-            elif m == 4:
-                v4.append(gn)
+            if m == 2:
+                v2.append(gn)
+            elif m == 3:
+                v3.append(gn)
             if opts.rc == '':
                 Config(1, gn, ['g'], bc[k0], m, m, k1, k1)
-i=1
-for m in range(3, nmax+1):
-    for k0 in range(3):
-        for k1 in range(m):
-            if m == 3 and k1 <= k0:
-                continue
-            gn = 'd_n3k%d_n%dk%d'%(k0,m,k1)
-            if m <= opts.m3d:
-                gc.append(gn)
-                #gv.append(gn)
-                if opts.rc == '':
-                    Config(1, gn, [gc[i]], '3*1', 3, 3)
-            i = i + 1
-gi=[]
-i0 = len(gc)
-if (opts.imax > 2):
-    for m in range(3, opts.imax+1):
-        bc = ['2s', '2p']
-        for k0 in range(2):
-            for k1 in range(m):
-                gn = 'g_n2k%d_n%dk%d'%(k0, m, k1)
-                gc.append(gn)
-                if m == 3:
-                    gi.append(gn)
-                if opts.rc == '':
-                    Config(1, gn, ['g'], bc[k0], m, m, k1, k1)
-    i = i0
-    for m in range(3, opts.imax+1):        
-        for k0 in range(2):
-            for k1 in range(m):
-                gn = 'd_n2k%d_n%dk%d'%(k0,m,k1)
-                if m <= opts.m3i:
-                    gc.append(gn)
-                    #gi.append(gn)
-                    if opts.rc == '':
-                        Config(1, gn, [gc[i]], '3*1', 3, 3)
-                i = i + 1
                 
 if opts.vmax <= 0:
     n1 = [2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 16, 24, 36, 54, 90]
@@ -289,9 +236,9 @@ Print('nn1=%d, nn2=%d nsp=%d'%(nn, nn2, nsp))
 
 eps = 1e-4
 if (opts.nbr < -1):
-    opts.nbr = max(opts.nmax, opts.imax)+abs(opts.nbr)-1
+    opts.nbr = opts.nmax+abs(opts.nbr)-1
 if (opts.nse < -1):
-    opts.nse = max(opts.nmax, opts.imax)+abs(opts.nse)-1
+    opts.nse = opts.nmax+abs(opts.nse)-1
 #QED correction options
 SetVP(103)
 SetMS(3, 3)
@@ -318,8 +265,9 @@ try:
     OptimizeRadial('g')
 except:
     exit(0)
-if ir >= 0 or opts.rc == '' or opts.ntr > 0:
-    SetBoundary(max(nmax,opts.imax)+opts.odn, eps, 1e30)
+
+if ir >= 0 or opts.rc == '' or opts.ntr >= 0:
+    SetBoundary(nmax+opts.odn, eps, 1e30)
 
     ReinitRadial(0)
     SetRadialGrid(opts.nrg, 1.1, -1e30, 0.0, 1.0)
@@ -331,8 +279,12 @@ if ir >= 0 or opts.rc == '' or opts.ntr > 0:
             OptimizeRadial('g')
         elif opts.oc == 'gv':
             OptimizeRadial(gv)
-        elif opts.oc == 'v4':
-            OptimizeRadial(v4)
+        elif opts.oc == 'v2':
+            OptimizeRadial(v2)
+        elif opts.oc == 'v3':
+            OptimizeRadial(v3)
+        elif opts.oc == 'gv2':
+            OptimizeRadial(gv+v2)
         elif opts.oc == 'gi':
             OptimizeRadial(gi)
         elif opts.oc == 'gvi':
@@ -342,7 +294,7 @@ if ir >= 0 or opts.rc == '' or opts.ntr > 0:
     except:
         exit(0)
     
-    SetBoundary(max(nmax,opts.imax)+opts.odn, eps, 1e30)
+    SetBoundary(nmax+opts.odn, eps, 1e30)
 GetPotential(p0+'a.pot')
 
 if opts.pseudo >= -2:
@@ -372,12 +324,12 @@ if opts.ic != '':
             ga0.append(c)
     ga=ga0
 
-if opts.mcc > 2:
+if opts.mcc > 1:
     ga = ga + ['cc1', 'cc2']
     if opts.rc == '':
-        Config(3, 'cc1', gc, '2*1 3*1 4*1 5*1', 3, opts.mcc, 0, opts.kcc, 0, 0, opts.acc, 1)
-        if opts.mcc2 > 2:
-            Config(3, 'cc2', ga[len(gc):-1], '2*1 3*1 4*1 5*1', 3, opts.mcc2, 0, opts.kcc, 0, 0, -opts.acc2, gc)
+        Config(3, 'cc1', gc, '2*1 3*1 4*1 5*1', 2, opts.mcc, 0, opts.kcc, 0, 0, opts.acc, 1)
+        if opts.mcc2 > 1:
+            Config(3, 'cc2', ga[len(gc):-1], '2*1 3*1 4*1 5*1', 2, opts.mcc2, 0, opts.kcc, 0, 0, -opts.acc2, gc)
     
 ListConfig(p0+'a.cfg')
 
@@ -441,6 +393,13 @@ else:
     if (opts.ntr > 0):
         PrintTable(p0+'b.tr', p0+'a.tr')
 
+    if opts.itr > 0:
+        TRTable(p0+'b.tr', gv, gc)
+        PrintTable(p0+'b.tr', p0+'a.tr')
+    if opts.ice > 0:
+        CETable(p0+'b.ce', gv, gc)
+        PrintTable(p0+'b.ce', p0+'a.ce')
+        
 t1 = time()
 Print('all done %d %10.3E'%(opts.nr,t1-t0))
 if opts.np > 1:
