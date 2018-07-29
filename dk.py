@@ -125,7 +125,7 @@ p.add_option('--ice', dest='ice', type='int',
 
 (opts, args) = p.parse_args()
 
-print opts
+print(opts)
 
 if opts.od != '':
     x = os.system('mkdir %s'%opts.od)
@@ -141,9 +141,9 @@ asym = ATOMICSYMBOL[opts.z]
 
 if opts.csf > 0:
     if ir >= 0:
-        ConvertToSFAC('dm%d.sf'%ir)
+        ConvertToSFAC('dk%d.sf'%ir)
     else:
-        ConvertToSFAC('dm.sf')
+        ConvertToSFAC('dk.sf')
 
 if opts.np > 1:
     InitializeMPI(opts.np)
@@ -189,9 +189,9 @@ for m in range(2, nmax+1):
 if opts.vmax <= 0:
     n1 = [2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 16, 24, 36, 54, 90]
 else:
-    n1 = range(2, opts.vmax+1)
+    n1 = list(range(2, opts.vmax+1))
 if opts.n2max <= 0:
-    n2 = range(9)+[9, 11, 15, 23, 40]
+    n2 = list(range(9))+[9, 11, 15, 23, 40]
     nn2 = len(n2)
 else:
     n2 = opts.n2max
@@ -218,10 +218,10 @@ if opts.pm == 0:
         ns = [0, nn]
     elif opts.nsp >= nn-1:
         nsp = nn-1
-        ns = [0]+range(2,len(n1)+1)
+        ns = [0]+list(range(2,len(n1)+1))
     else:
         nsp = opts.nsp
-        ns = range(0,nn+1,nn/nsp)
+        ns = list(range(0,nn+1,nn/nsp))
     if ns[-1] < nn:
         ns[-1] = nn
     ni = n1[ns[i]:ns[i+1]]
@@ -246,6 +246,7 @@ SetSE(opts.nse, opts.mse)
 SetBreit(opts.nbr, opts.mbr, -1, -1, opts.kbr)
 
 PrintNucleus()
+PrintNucleus(1, p0+'a.iso')
 PrintQED()
 Print('kmax=%d'%opts.kmax)
 Print('ns=%d'%(len(ns)-1))
@@ -310,7 +311,7 @@ elif opts.jmin >= 0 and opts.nj > 0:
     j0 = opts.jmin
     if opts.n%2  != j0%2:
         j0 += 1
-    Structure(opts.pp, range(j0, j0+opts.nj*2, 2))
+    Structure(opts.pp, list(range(j0, j0+opts.nj*2, 2)))
     
 Structure(opts.hiter)
 Structure(-opts.piter-1, opts.ptol, opts.expdim, opts.expdimz)
@@ -392,7 +393,6 @@ else:
     PrintTable(p0+'b.en', p0+'a.en')
     if (opts.ntr > 0):
         PrintTable(p0+'b.tr', p0+'a.tr')
-
     if opts.itr > 0:
         TRTable(p0+'b.tr', gv, gc)
         PrintTable(p0+'b.tr', p0+'a.tr')
