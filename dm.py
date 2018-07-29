@@ -248,7 +248,7 @@ if opts.vmax <= 0:
 else:
     n1 = list(range(2, opts.vmax+1))
 if opts.n2max <= 0:
-    n2 = list(range(9)+[9, 11, 15, 23, 40])
+    n2 = list(range(9))+[9, 11, 15, 23, 40]
     nn2 = len(n2)
 else:
     n2 = opts.n2max
