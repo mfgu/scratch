@@ -120,8 +120,14 @@ p.add_option('--rand', dest='rand', type='int',
              default=11, help='randomize config list')
 p.add_option('--warn', dest='warn', type='float',
              default=-1, help='warn large mbpt terms')
+p.add_option('--warntr', dest='warntr', type='float',
+             default=-1, help='warn large mbpt tr terms')
 p.add_option('--ignore', dest='ignore', type='float',
-             default=50.0, help='ignore large mbpt terms')
+             default=10.0, help='ignore large mbpt terms')
+p.add_option('--ignoretr', dest='ignoretr', type='float',
+             default=1.0, help='ignore large mbpt tr terms')
+p.add_option('--azc', dest='azc', type='float',
+             default=0.75, help='mbpt angz correction threshold')
 p.add_option('--rc', dest='rc', type='string',
              default='', help='read config list')
 p.add_option('--rh', dest='rh', type='string',
@@ -132,8 +138,24 @@ p.add_option('--itr', dest='itr', type='int',
              default=0, help='compute CI transition rates')
 p.add_option('--ice', dest='ice', type='int',
              default=0, help='compute CI excitation')
+p.add_option('--itr1', dest='itr1', type='int',
+             default=0, help='compute CI transition rates')
+p.add_option('--ice1', dest='ice1', type='int',
+             default=0, help='compute CI excitation')
 p.add_option('--nwi', dest='nwi', type='int',
              default=1, help='warn/ignore n scale')
+p.add_option('--eps', dest='eps', type='float',
+             default=1e-3, help='mbpt boundary eps')
+p.add_option('--fab', dest='fab', type='float',
+             default=1.0, help='mbpt boundary adjust')
+p.add_option('--nab', dest='nab', type='int',
+             default=0, help='mbpt boundary adjust')
+p.add_option('--rmp', dest='rmp', type='string',
+             default='', help='mbpt radial multipole file')
+p.add_option('--adjaz', dest='adjaz', type='int',
+             default=0, help='mbpt adjust angz')
+p.add_option('--angzm', dest='angzm', type='float',
+             default=0, help='mbpt angz mem limit')
 
 (opts, args) = p.parse_args()
 
@@ -324,7 +346,7 @@ else:
 Print('n1:', n1)
 Print('nn1=%d, nn2=%d nsp=%d'%(nn, nn2, nsp))
 
-eps = 1e-4
+eps = opts.eps
 if (opts.nbr < -1):
     opts.nbr = max(opts.nmax, opts.imax)+abs(opts.nbr)-1
 if (opts.nse < -1):
@@ -375,13 +397,15 @@ elif opts.oc == 'gvi':
     oc = gv+gi
 elif opts.oc == 'ic' and opts.ic != '':
     oc = opts.ic    
-    
-if ir >= 0 or opts.rc == '' or opts.ntr > 0:
+
+if opts.nab == 0:
+    opts.fab = 0.0
+if ir >= 0 or opts.rc == '':
     try:
         OptimizeRadial('g')
     except:
         exit(0)
-    SetBoundary(max(nmax,opts.imax)+opts.odn, eps, 1e30)
+    SetBoundary(max(nmax,opts.imax)+opts.odn, eps, 1e30, opts.fab)
 
     ReinitRadial(0)
     SetRadialGrid(opts.nrg, 1.1, -1e30, 0.0, 1.0)
@@ -392,8 +416,10 @@ if ir >= 0 or opts.rc == '' or opts.ntr > 0:
         OptimizeRadial(oc)
     except:
         exit(0)    
-    SetBoundary(max(nmax,opts.imax)+opts.odn, eps, 1e30)
+    SetBoundary(max(nmax,opts.imax)+opts.odn, eps, 1e30, opts.fab, opts.nab, gc, '', 2, 10)
 else:
+    Print('opt config: %s %d'%(opts.oc, opts.om))
+    SetPotentialMode(opts.om, 1e30, opts.opm)
     try:
         OptimizeRadial(oc)
     except:
@@ -428,6 +454,9 @@ if opts.ic != '':
             ga0.append(c)
     ga=ga0
 
+if opts.nwi >= 0:
+    nwi = max(nmax, opts.imax)+opts.nwi
+    Config(33, '', ga, '', nwi, nwi)
 if opts.mcc > 1:
     if n <= 2:
         bss = '1*1 2*1 3*1 4*1 5*1'
@@ -440,7 +469,7 @@ if opts.mcc > 1:
             Config(3, 'cc2', ga[len(gc):-1], bss, 2, opts.mcc2, 0, opts.kcc, 0, 0, -opts.acc2, gc)
 if opts.nwi >= 0:
     nwi = max(nmax, opts.imax)+opts.nwi
-    Config(32, '', ga, '', nwi, nwi)
+    Config(33, '', ['cc1','cc2'], '', nwi, nwi)
     
 ListConfig(p0+'a.cfg')
 
@@ -455,7 +484,14 @@ if opts.ci > 0:
     exit(0)
 
 TransitionMBPT(opts.ntr, 3)
+SetOption("mbpt:warntr", opts.warntr)
+SetOption("mbpt:ignoretr", opts.ignoretr)
+SetOption("mbpt:angzc", opts.azc)
+SetOption("mbpt:adjaz", opts.adjaz)
+SetOption("mbpt:angzm", opts.angzm)
 if ir >= 0:
+    if opts.rmp != '':
+        opts.rmp = p0+'a.mp'
     if (opts.ntr > 0):
         TransitionMBPT(p0+'b.tr', gv+gv1, gc)
     StructureMBPT(opts.warn, opts.ignore)
@@ -486,6 +522,7 @@ if ir >= 0:
     PrintTable(p0+'b.en', p0+'a.en')
     if (opts.ntr > 0):
         PrintTable(p0+'b.tr', p0+'a.tr')
+        SaveRadialMultipole(p0+'a.mp', max(opts.nmax,opts.imax,opts.mcc,opts.mcc2), opts.ntr)
 else:
     if opts.pm == 0:
         nns = len(ns)-1
@@ -499,9 +536,14 @@ else:
         StructureMBPT(abs(opts.vmax)*10+mex)
     else:
         StructureMBPT(mex)
-    if (opts.ntr > 0):
+    if (opts.ntr > 0):        
         TransitionMBPT(p0+'b.tr', gv+gv1, gc)
+        if opts.rmp != '':
+            opts.rmp = pref+'i00a.mp'
+            LoadRadialMultipole(opts.rmp)            
     StructureMBPT(p0+'b.en', pref+'i00b.ham0', h, ga, len(gc))
+    if opts.ntr > 0 and opts.rmp != '':
+        LoadRadialMultipole()
     if opts.bas:
         BasisTable(p0+'a.bs')
         BasisTable(p0+'a', 10)
@@ -514,7 +556,7 @@ else:
         bss = '3*1'
     for m in range(nmax+1, max(opts.ice,opts.itr)+1):
         gn = 'ic%d'%m
-        Config(1, gn, gv, bss, m, m)            
+        Config(-1, gn, gv, bss, m, m)            
         Structure(p0+'b.en', [gn])
         icc.append(gn)
     MemENTable(p0+'b.en')
@@ -526,11 +568,20 @@ else:
             TRTable(p0+'b.tr', gc, gc)
         for gn in icc:
             TRTable(p0+'b.tr', gc, [gn])
+        if opts.itr1 > 0:
+            for ic0 in range(len(icc)):
+                for ic1 in range(ic0, len(icc)):
+                    TRTable(p0+'b.tr', [icc[ic0]], [icc[ic1]], -1)
         PrintTable(p0+'b.tr', p0+'a.tr')
     if opts.ice > 0:
-        CETable(p0+'b.ce', gv, gc)
+        if opts.ice1 == 0:
+            CETable(p0+'b.ce', gv, gc)
+        else:
+            CETable(p0+'b.ce', gv+gv1, gc)
         for gn in icc:
             CETable(p0+'b.ce', gv, [gn])
+            if opts.ice1 > 0:
+                CETable(p0+'b.ce', gv1, [gn])
         PrintTable(p0+'b.ce', p0+'a.ce')
 
 t1 = time()
