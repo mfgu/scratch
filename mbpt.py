@@ -28,6 +28,8 @@ p.add_option('-s', '--nsp', dest='nsp', type='int',
              default=16, help='number of n1s in split jobs')
 p.add_option('-t', '--ntr', dest='ntr', type='int',
              default=0, help='mbpt transition rate option')
+p.add_option('--gtr', dest='gtr', type='string',
+             default='gv', help='mbpt transition lower config')
 p.add_option('-k', '--nk', dest='nk', type='int',
              default=-1, help='k shell max excitation')
 p.add_option('-l', '--nl', dest='nl', type='int',
@@ -489,11 +491,28 @@ SetOption("mbpt:ignoretr", opts.ignoretr)
 SetOption("mbpt:angzc", opts.azc)
 SetOption("mbpt:adjaz", opts.adjaz)
 SetOption("mbpt:angzm", opts.angzm)
+
+if opts.gtr == 'gv':
+    gt = gv
+elif opts.gtr == 'v1':
+    gt = gv1
+elif opts.gtr == 'v2':
+    gt = gv1+gv2
+elif opts.gtr == 'v3':
+    gt = gv1+gv2+gv3
+elif opts.gtr == 'gv1':
+    gt = gv + gv1
+elif opts.gtr == 'gv2':
+    gt = gv+gv1+gv2
+elif opts.gtr == 'gv3':
+    gt = gv+gv1+gv2+gv3
+else:
+    gt = gc
 if ir >= 0:
     if opts.rmp != '':
         opts.rmp = p0+'a.mp'
     if (opts.ntr > 0):
-        TransitionMBPT(p0+'b.tr', gv+gv1, gc)
+        TransitionMBPT(p0+'b.tr', gt, gc)
     StructureMBPT(opts.warn, opts.ignore)
     StructureMBPT(opts.rand, 0, opts.mcut0, opts.mcut1, opts.mcut2, opts.mcut3)
     mex = 0
@@ -537,7 +556,7 @@ else:
     else:
         StructureMBPT(mex)
     if (opts.ntr > 0):        
-        TransitionMBPT(p0+'b.tr', gv+gv1, gc)
+        TransitionMBPT(p0+'b.tr', gv, gc)
         if opts.rmp != '':
             opts.rmp = pref+'i00a.mp'
             LoadRadialMultipole(opts.rmp)            
@@ -561,11 +580,16 @@ else:
         icc.append(gn)
     MemENTable(p0+'b.en')
     PrintTable(p0+'b.en', p0+'a.en')
-    #if (opts.ntr > 0):
-    #    PrintTable(p0+'b.tr', p0+'a.tr')
     if opts.itr > 0:
         if opts.ntr == 0:
             TRTable(p0+'b.tr', gc, gc)
+        else:
+            gta=[]            
+            for a in gc:
+                if not a in gt:
+                    gta.append(a)
+            if len(gta) > 0:
+                TRTable(p0+'b.tr', gta, gta)
         for gn in icc:
             TRTable(p0+'b.tr', gc, [gn])
         if opts.itr1 > 0:
