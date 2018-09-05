@@ -4,6 +4,11 @@ from time import time
 import math
 import os
 
+"""
+Mg-like Z=24, use 8 omp threads. spectroscopic nmax=3, results in dir ogv
+python mbpt.py -z 24 -n 12 -s 1 -p 8 --nmax=3 --m3d=3 --oc=gv --od=ogv
+"""
+
 t0 = time()
 
 #parse cmdline args
