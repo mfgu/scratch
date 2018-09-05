@@ -63,11 +63,11 @@ p.add_option('--kmax', dest='kmax', type='int',
 p.add_option('--kcc', dest='kcc', type='int',
              default=8, help='maximum l of correlation config')
 p.add_option('--acc', dest='acc', type='float',
-             default=0.01, help='correlation mixing threshold')
+             default=0.05, help='correlation mixing threshold')
 p.add_option('--acc1', dest='acc1', type='float',
-             default=0.1, help='correlation mixing threshold')
+             default=0.25, help='correlation mixing threshold')
 p.add_option('--acc2', dest='acc2', type='float',
-             default=0.1, help='correlation mixing threshold')
+             default=0.5, help='correlation mixing threshold')
 p.add_option('--hiter', dest='hiter', type='int',
              default=0, help='hamilton iteration for perturbing configs')
 p.add_option('--piter', dest='piter', type='int',
