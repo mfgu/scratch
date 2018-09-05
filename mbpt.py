@@ -53,6 +53,8 @@ p.add_option('--opm', dest='opm', type='int',
 p.add_option('--od', dest='od', type='string',
              default='', help='output directory')
 p.add_option('--mcc', dest='mcc', type='int',
+             default=-1, help='maximum n of correlation config')
+p.add_option('--mcc1', dest='mcc1', type='int',
              default=9, help='maximum n of correlation config')
 p.add_option('--mcc2', dest='mcc2', type='int',
              default=9, help='maximum n of correlation config')
@@ -62,8 +64,10 @@ p.add_option('--kcc', dest='kcc', type='int',
              default=8, help='maximum l of correlation config')
 p.add_option('--acc', dest='acc', type='float',
              default=0.05, help='correlation mixing threshold')
+p.add_option('--acc1', dest='acc1', type='float',
+             default=0.25, help='correlation mixing threshold')
 p.add_option('--acc2', dest='acc2', type='float',
-             default=0.05, help='correlation mixing threshold')
+             default=0.5, help='correlation mixing threshold')
 p.add_option('--hiter', dest='hiter', type='int',
              default=0, help='hamilton iteration for perturbing configs')
 p.add_option('--piter', dest='piter', type='int',
@@ -71,11 +75,11 @@ p.add_option('--piter', dest='piter', type='int',
 p.add_option('--ptol', dest='ptol', type='float',
              default=0.01, help='perturb config cutoff tolerance')
 p.add_option('--expdim', dest='expdim', type='float',
-             default=0.05, help='perturb config cutoff tolerance')
+             default=0.1, help='perturb config cutoff tolerance')
 p.add_option('--expdimz', dest='expdimz', type='float',
              default=1e-4, help='perturb config cutoff tolerance')
 p.add_option('--mcut0', dest='mcut0', type='float',
-             default=1e-3, help='correlation mixing threshold')
+             default=1e-4, help='correlation mixing threshold')
 p.add_option('--mcut1', dest='mcut1', type='float',
              default=1e-1, help='correlation mixing threshold')
 p.add_option('--mcut2', dest='mcut2', type='float',
@@ -459,14 +463,19 @@ if opts.ic != '':
 if opts.nwi >= 0:
     nwi = max(nmax, opts.imax)+opts.nwi
     Config(33, '', ga, '', nwi, nwi)
-if opts.mcc > 1:
+if opts.mcc <= 0:
+    opts.mcc = abs(opts.mcc)+max(opts.nmax, opts.imax)
+if opts.mcc > 1 or opts.mcc1 > 1:
     if n <= 2:
         bss = '1*1 2*1 3*1 4*1 5*1'
     else:
         bss = '2*1 3*1 4*1 5*1'
     ga = ga + ['cc1', 'cc2']
-    if opts.rc == '':        
-        Config(3, 'cc1', gc, bss, 2, opts.mcc, 0, opts.kcc, 0, 0, opts.acc, 1)
+    if opts.rc == '':
+        if opts.mcc > 1:
+            Config(3, 'cc1', gc, bss, 2, opts.mcc, 0, opts.kcc, 0, 0, opts.acc, 1)
+        if opts.mcc1 > opts.mcc:
+            Config(3, 'cc1', gc, bss, 2, opts.mcc1, 0, opts.kcc, 0, 0, opts.acc1, 1)
         if opts.mcc2 > 1:
             Config(3, 'cc2', ga[len(gc):-1], bss, 2, opts.mcc2, 0, opts.kcc, 0, 0, -opts.acc2, gc)
 if opts.nwi >= 0:
@@ -561,8 +570,6 @@ else:
             opts.rmp = pref+'i00a.mp'
             LoadRadialMultipole(opts.rmp)            
     StructureMBPT(p0+'b.en', pref+'i00b.ham0', h, ga, len(gc))
-    if opts.ntr > 0 and opts.rmp != '':
-        LoadRadialMultipole()
     if opts.bas:
         BasisTable(p0+'a.bs')
         BasisTable(p0+'a', 10)
@@ -590,6 +597,9 @@ else:
                     gta.append(a)
             if len(gta) > 0:
                 TRTable(p0+'b.tr', gta, gta)
+    if opts.ntr > 0 and opts.rmp != '':
+        LoadRadialMultipole()
+    if opts.itr > 0:
         for gn in icc:
             TRTable(p0+'b.tr', gc, [gn])
         if opts.itr1 > 0:
