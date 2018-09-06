@@ -14,16 +14,20 @@ for i in range(nn):
     fn = 'pol%de%03d.txt'%(m, i)
     print(fn)
     r = transpose(loadtxt(fn))
+    if len(r.shape) == 1:
+        r = r.reshape((8,1))
     w0 = where(logical_and(r[4] > 700, r[4] < 750))
     w1 = where(logical_and(r[4] > 800, r[4] < 850))
     y0 = 0.0
     y1 = 0.0
     p0 = 0.0
     p1 = 0.0
-    y0 = sum(r[5][w0]*r[6][w0])
+    if len(w0[0])>0:
+        y0 = sum(r[5][w0]*r[6][w0])
     if (y0 > 0):
         p0 = sum(r[5][w0]*r[7][w0])/sum(r[5][w0])
-    y1 = sum(r[5][w1]*r[6][w1])
+    if len(w1[0]) > 0:
+        y1 = sum(r[5][w1]*r[6][w1])
     if (y1 > 0):
         p1 = sum(r[5][w1]*r[7][w1])/sum(r[5][w1])
     f.write('%12.5E %12.5E %12.5E %12.5E %12.5E\n'%(e[i], y0, y1, p0, p1))

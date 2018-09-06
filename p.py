@@ -5,12 +5,14 @@ import sys
 
 m = int(sys.argv[1])
 
+InitializeMPI(2)
 a = 'Fe'
 p = '%s10'%a
 e0 = 300.0
 nn = 1000
 sig = 1.6
 de = sig/2.0
+etr = 100.0
 e = [e0 + i*de for i in range(nn)]
 SetMaxLevels(89)
 SetMLevels(p+'b.en', p+'b.tr')
@@ -24,7 +26,7 @@ for i in range(0,nn):
         SetMAIRates(p+'b.ai')
     SetDensity(1.0)
     PopulationTable('pop%de%03d.txt'%(m,i))
-    Orientation()
-    PolarizationTable('pol%de%03d.txt'%(m,i))
-
+    Orientation(etr)
+    PolarizationTable('pol%de%03d.txt'%(m,i), '', 700, 850, 1e-8)
+FinalizeMPI()
 #CloseSPOL()
