@@ -2,13 +2,13 @@ from pfac.fac import *
 import sys
 
 md = int(sys.argv[1])
-ConvertToSFAC('m.sf')
+#ConvertToSFAC('m.sf')
 InitializeMPI(2)
 a = 'Fe'
 p = '%s10'%a
 nmin=3
 nmax=10
-smax=4
+smax=5
 SetAtom(a)
 gv=['g2']
 Config('g2', '1s2 2*8')
@@ -30,7 +30,7 @@ for n in range(3, nmax+1):
 dv=[]
 nv=[]
 mv=[]
-for n in [3,4,5]:
+for n in range(3, smax+1):
     for m in range(max(nmin,n),nmax+1):
         gn = 'd%d.%d'%(n,m)
         dv.append(gn)
@@ -68,9 +68,9 @@ for i in range(len(dv)):
     if mv[i] != nv[i]:
         TRTable(p+'b.tr', [iv[mv[i]-3]], [dv[i]], m)
     for j in range(len(dv)):
-        if mv[j] == mv[i] and nv[j] < nv[i]:
+        if mv[j] == mv[i] and nv[j] <= nv[i]:
             TRTable(p+'b.tr', [dv[j]], [dv[i]], m)
-PrintTable(p+'b.tr', p+'a.tr')
+#PrintTable(p+'b.tr', p+'a.tr')
 
 WallTime('ce')
 for i0 in range(3,smax+1):
@@ -82,18 +82,14 @@ PrintTable(p+'b.ce', p+'a.ce')
 
 WallTime('ai')
 for i in range(len(dv)):
-    if md > 0:
-        AITableMSub(p+'b.ai', [dv[i]], ['g2'])
-        AITableMSub(p+'b.ai', [dv[i]], ['g3'])
-        if nv[i] > 3:
-            AITableMSub(p+'b.ai', [dv[i]], ['g4'])
-    else:
-        AITable(p+'b.ai', [dv[i]], ['g2'])
-        AITable(p+'b.ai', [dv[i]], ['g3'])
-        if nv[i] > 3:
-            AITable(p+'b.ai', [dv[i]], ['g4'])
-PrintTable(p+'b.ai', p+'a.ai')
+    for n in range(2,nv[i]+1):
+        if md > 0:
+            AITableMSub(p+'b.ai', [dv[i]], [gv[n-2]])
+        else:
+            AITable(p+'b.ai', [dv[i]], [gv[n-2]])
+
+#PrintTable(p+'b.ai', p+'a.ai')
 
 WallTime('done')
 FinalizeMPI()
-CloseSFAC()
+#CloseSFAC()
