@@ -8,7 +8,7 @@ a = 'Fe'
 p = '%s10'%a
 nmin=3
 nmax=10
-smax=5
+smax=4
 SetAtom(a)
 gv=['g2']
 Config('g2', '1s2 2*8')

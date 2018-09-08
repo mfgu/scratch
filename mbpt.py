@@ -4,11 +4,6 @@ from time import time
 import math
 import os
 
-"""
-Mg-like Z=24, use 8 omp threads. spectroscopic nmax=3, results in dir ogv
-python mbpt.py -z 24 -n 12 -s 1 -p 8 --nmax=3 --m3d=3 --oc=gv --od=ogv
-"""
-
 t0 = time()
 
 #parse cmdline args
@@ -24,7 +19,7 @@ p.add_option('-m', '--nmax', dest='nmax', type='int',
 p.add_option('-i', '--imax', dest='imax', type='int',
              default=0, help='inner shell excitation')
 p.add_option('-v', '--vmax', dest='vmax', type='int',
-             default=-8, help='virtual orbital n max')
+             default=-15, help='virtual orbital n max')
 p.add_option('--n2max', dest='n2max', type='int',
              default=0, help='max n of the 2nd virtual orbital')
 p.add_option('-r', '--nr', dest='nr', type='int',
@@ -60,9 +55,9 @@ p.add_option('--od', dest='od', type='string',
 p.add_option('--mcc', dest='mcc', type='int',
              default=-1, help='maximum n of correlation config')
 p.add_option('--mcc1', dest='mcc1', type='int',
-             default=9, help='maximum n of correlation config')
+             default=15, help='maximum n of correlation config')
 p.add_option('--mcc2', dest='mcc2', type='int',
-             default=9, help='maximum n of correlation config')
+             default=15, help='maximum n of correlation config')
 p.add_option('--kmax', dest='kmax', type='int',
              default=8, help='max orbital partial wave')
 p.add_option('--kcc', dest='kcc', type='int',
@@ -310,11 +305,11 @@ if (opts.imax > 1 and nv > 1):
                 i = i + 1
                 
 if opts.vmax <= 0:
-    n1 = [2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 16, 24, 36, 54, 90]
+    n1 = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 22, 30, 46, 78, 122]
 else:
     n1 = list(range(2, opts.vmax+1))
 if opts.n2max <= 0:
-    n2 = list(range(9))+[9, 11, 15, 23, 40]
+    n2 = list(range(9))+[9, 11, 15, 23, 39, 61]
     nn2 = len(n2)
 else:
     n2 = opts.n2max

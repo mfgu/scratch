@@ -5,7 +5,7 @@ m = int(sys.argv[1])
 
 e0 = 300.0
 nn = 1000
-sig = 1.6
+sig = 1.7
 de = sig/2
 e = [e0 + i*de for i in range(nn)]
 
