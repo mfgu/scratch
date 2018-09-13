@@ -151,7 +151,7 @@ p.add_option('--ice1', dest='ice1', type='int',
 p.add_option('--nwi', dest='nwi', type='int',
              default=1, help='warn/ignore n scale')
 p.add_option('--eps', dest='eps', type='float',
-             default=1e-3, help='mbpt boundary eps')
+             default=1e-4, help='mbpt boundary eps')
 p.add_option('--fab', dest='fab', type='float',
              default=1.0, help='mbpt boundary adjust')
 p.add_option('--nab', dest='nab', type='int',
