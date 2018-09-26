@@ -5,7 +5,7 @@ m = int(sys.argv[1])
 
 e0 = 300.0
 nn = 1000
-sig = 1.7
+sig = 2.13
 de = sig/2
 e = [e0 + i*de for i in range(nn)]
 
@@ -22,13 +22,17 @@ for i in range(nn):
     y1 = 0.0
     p0 = 0.0
     p1 = 0.0
+    s0 = 0.0
+    s1 = 0.0
     if len(w0[0])>0:
         y0 = sum(r[5][w0]*r[6][w0])
+        s0 = sum(r[5][w0])
     if (y0 > 0):
         p0 = sum(r[5][w0]*r[7][w0])/sum(r[5][w0])
     if len(w1[0]) > 0:
         y1 = sum(r[5][w1]*r[6][w1])
+        s1 = sum(r[5][w1])
     if (y1 > 0):
         p1 = sum(r[5][w1]*r[7][w1])/sum(r[5][w1])
-    f.write('%12.5E %12.5E %12.5E %12.5E %12.5E\n'%(e[i], y0, y1, p0, p1))
+    f.write('%12.5E %12.5E %12.5E %12.5E %12.5E %12.5E %12.5E\n'%(e[i], y0, y1, p0, p1, s0, s1))
 f.close()

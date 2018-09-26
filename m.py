@@ -7,7 +7,7 @@ InitializeMPI(2)
 a = 'Fe'
 p = '%s10'%a
 nmin=3
-nmax=10
+nmax=50
 smax=4
 SetAtom(a)
 gv=['g2']
@@ -15,7 +15,7 @@ Config('g2', '1s2 2*8')
 for n in range(3,smax+1):
     gn = 'g%d'%n
     gv.append(gn)
-    Config(gn, '1s2 2*7 %d*1'%n)
+    Config(gn, '1s2 2*7 %d[0,1,2,3,4,5,6,7,8]1'%n)
 
 WallTime('opt')
 ConfigEnergy(0)
@@ -26,7 +26,7 @@ iv=[]
 for n in range(3, nmax+1):    
     gn = 'i%d'%n
     iv.append(gn)
-    Config(gn, '1s2 2*8 %d*1'%n)
+    Config(gn, '1s2 2*8 %d[0,1,2,3,4,5,6,7,8]1'%n)
 dv=[]
 nv=[]
 mv=[]
@@ -39,7 +39,7 @@ for n in range(3, smax+1):
         if m == n:
             Config(gn, '1s2 2*7 %d*2'%m)
         else:
-            Config(gn, '1s2 2*7 %d*1 %d*1'%(n,m))
+            Config(gn, '1s2 2*7 %d*1 %d[0,1,2,3,4,5,6,7,8]1'%(n,m))
 
 WallTime('en')
 for g in gv+iv+dv:
