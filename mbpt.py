@@ -14,6 +14,10 @@ p.add_option('-n', '--n', dest='n', type='int',
              default=1, help='number of electrons')
 p.add_option('-p', '--np', dest='np', type='int',
              default=1, help='number of processors')
+p.add_option('--cfg', dest='cfg', type='string',
+             default='', help='configurations')
+p.add_option('--ccs', dest='ccs', type='string',
+             default='', help='correlation configurations')
 p.add_option('-m', '--nmax', dest='nmax', type='int',
              default=5, help='max principle quantum number')
 p.add_option('-i', '--imax', dest='imax', type='int',
@@ -34,8 +38,22 @@ p.add_option('-k', '--nk', dest='nk', type='int',
              default=-1, help='k shell max excitation')
 p.add_option('-l', '--nl', dest='nl', type='int',
              default=-1, help='l shell max excitation')
+p.add_option('--nm', dest='nm', type='int',
+             default=-1, help='m shell max excitation')
+p.add_option('--nn', dest='nn', type='int',
+             default=-1, help='n shell max excitation')
+p.add_option('--iex', dest='iex', type='string',
+             default='', help='disable inner shell excitations')
+p.add_option('--nex', dest='nex', type='int',
+             default=0, help='disable inner shell excitations')
+p.add_option('--wex', dest='wex', type='string',
+             default='', help='disable inner shell excitations')
+p.add_option('--dex', dest='dex', type='float',
+             default=0.0, help='disable inner shell excitations')
 p.add_option('-c', '--csf', dest='csf', type='int',
              default=0, help='convert to sfac input file')
+p.add_option('--sfn', dest='sfn', type='string',
+             default='', help='sfac file name')
 p.add_option('-a', '--mmax', dest='mm', type='float',
              default=0, help='maximum memory usage for radial integra caching')
 p.add_option('-d', '--dry', dest='dry', type='int',
@@ -73,9 +91,9 @@ p.add_option('--hiter', dest='hiter', type='int',
 p.add_option('--piter', dest='piter', type='int',
              default=50, help='perturb config iteration to enlarging ci space')
 p.add_option('--ptol', dest='ptol', type='float',
-             default=0.01, help='perturb config cutoff tolerance')
+             default=0.025, help='perturb config cutoff tolerance')
 p.add_option('--expdim', dest='expdim', type='float',
-             default=0.05, help='perturb config cutoff tolerance')
+             default=0.025, help='perturb config cutoff tolerance')
 p.add_option('--expdimz', dest='expdimz', type='float',
              default=1e-4, help='perturb config cutoff tolerance')
 p.add_option('--mcut0', dest='mcut0', type='float',
@@ -126,12 +144,26 @@ p.add_option('--rand', dest='rand', type='int',
              default=11, help='randomize config list')
 p.add_option('--warn', dest='warn', type='float',
              default=-1, help='warn large mbpt terms')
+p.add_option('--nwarn', dest='nwarn', type='float',
+             default=-1, help='nwarn large mbpt terms')
+p.add_option('--xwarn', dest='xwarn', type='float',
+             default=-1, help='xwarn large mbpt terms')
+p.add_option('--mwarn', dest='mwarn', type='float',
+             default=-1, help='mwarn large mbpt terms')
+p.add_option('--ewarn', dest='ewarn', type='float',
+             default=-1, help='ewarn large mbpt terms')
+p.add_option('--wwarn', dest='wwarn', type='float',
+             default=-1, help='wwarn large mbpt terms')
+p.add_option('--wmix', dest='wmix', type='float',
+             default=-1, help='wmix large mbpt terms')
+p.add_option('--nwmix', dest='nwmix', type='float',
+             default=-1, help='nwmix large mbpt terms')
 p.add_option('--warntr', dest='warntr', type='float',
              default=-1, help='warn large mbpt tr terms')
 p.add_option('--ignore', dest='ignore', type='float',
-             default=10.0, help='ignore large mbpt terms')
+             default=-1, help='ignore large mbpt terms')
 p.add_option('--ignoretr', dest='ignoretr', type='float',
-             default=1.0, help='ignore large mbpt tr terms')
+             default=-1, help='ignore large mbpt tr terms')
 p.add_option('--azc', dest='azc', type='float',
              default=0.75, help='mbpt angz correction threshold')
 p.add_option('--rc', dest='rc', type='string',
@@ -162,6 +194,20 @@ p.add_option('--adjaz', dest='adjaz', type='int',
              default=0, help='mbpt adjust angz')
 p.add_option('--angzm', dest='angzm', type='float',
              default=0, help='mbpt angz mem limit')
+p.add_option('--mrr', dest='mrr', type='int',
+             default=2, help='mode of radial refinement')
+p.add_option('--ccn', dest='ccn', type='int',
+             default=-1, help='correlation config index')
+p.add_option('--ccm', dest='ccm', type='int',
+             default=-1, help='correlation config index max index')
+p.add_option('--nfc', dest='nfc', type='int',
+            default=0, help='full configuration label in level output')
+p.add_option('--bs', dest='bs', type='string',
+             default='', help='base config')
+p.add_option('--momp', dest='momp', type='int',
+             default='0', help='omp mode')
+p.add_option('--fomp', dest='fomp', type='float',
+             default='-1.0', help='omp factor')
 
 (opts, args) = p.parse_args()
 
@@ -179,10 +225,12 @@ if opts.ic != '':
 ir = opts.nr
 asym = ATOMICSYMBOL[opts.z]
 if opts.csf > 0:
-    if ir >= 0:
-        ConvertToSFAC('d%02dr%d.sf'%(opts.n,ir))
-    else:
-        ConvertToSFAC('d%02d.sf'%opts.n)
+    if opts.sfn == '':
+        if ir >= 0:
+            opts.sfn = 'd%02dr%d.sf'%(opts.n,ir)
+        else:
+            opts.sfn = 'd%02d.sf'%opts.n            
+    ConvertToSFAC(opts.sfn)
 
 if opts.np > 1:
     InitializeMPI(opts.np)
@@ -197,7 +245,7 @@ if odir != '':
 if ir >= 0 and opts.ci == 0:
     p0 = '%si%02d'%(pref,ir)
 elif opts.ci > 0:
-    p0 = '%sc'%pref
+    p0 = '%s'%pref
 else:
     p0 = pref
     
@@ -211,25 +259,28 @@ m3d=opts.m3d
 if opts.rc != '':
     ReadConfig(opts.rc)
 
-if n <= 2:
-    nv = 1
-    qv = n
-    bv = ['1s']
-    bi = []
-elif n <= 10:
-    nv = 2
-    qv = n-2
-    bv = ['2s', '2p']
-    bi = ['1s']
-elif n <= 28:
-    nv = 3
-    qv = n-10
-    bv = ['3s', '3p', '3d']
-    bi = ['2s', '2p']
+if opts.cfg == '':
+    if n <= 2:
+        nv = 1
+        qv = n
+        bv = ['1s']
+        bi = []
+    elif n <= 10:
+        nv = 2
+        qv = n-2
+        bv = ['2s', '2p']
+        bi = ['1s']
+    elif n <= 28:
+        nv = 3
+        qv = n-10
+        bv = ['3s', '3p', '3d']
+        bi = ['2s', '2p']
+    else:
+        print('Invalid nq: %d'%n)
+        exit(1)
 else:
-    print('Invalid nq: %d'%n)
-    exit(1)
-    
+    nv = 0
+    nmax = -opts.nmax
 gc=[]
 gc.append('g')
 if opts.rc == '' :
@@ -247,7 +298,9 @@ if opts.rc == '' :
             Config('g', '1s2 2*8 3s2 3p%d'%(qv-2))
         else:
             Config('g', '1s2 2*8 3s2 3p6 3d%d'%(qv-8))
-            
+    if opts.cfg != '':
+        for c in opts.cfg.split('&'):
+            Config('g', c)
 gv=['g']
 gv1 = []
 gv2 = []
@@ -281,6 +334,15 @@ for m in range(nv, nmax+1):
                 if opts.rc == '':
                     Config(1, gn, [gc[i]], '%d*1'%nv, nv, nv)
             i = i + 1
+gccn = ['ccn']
+if opts.ccs != '' and opts.rc == '':
+    for c in opts.ccs.split('&'):
+        Config(gccn[-1], c)
+if opts.ccn > 0:
+    for i in range(opts.ccn):
+        if opts.rc == '':
+            Config(gccn[0], '@%sa.cc%d'%(p0,i))
+        
 gi=[]
 i0 = len(gc)
 if (opts.imax > 1 and nv > 1):
@@ -301,13 +363,13 @@ if (opts.imax > 1 and nv > 1):
                 if m <= opts.m3i:
                     gc.append(gn)
                     if opts.rc == '':
-                        Config(1, gn, [gc[i]], '%d*1'(nv-1), nv, nv)
+                        Config(1, gn, [gc[i]], '%d*1'%(nv-1), nv, nv)
                 i = i + 1
                 
 if opts.vmax <= 0:
-    n1 = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 22, 30, 46, 78, 122]
+    n1 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 22, 30, 46, 78, 122]
 else:
-    n1 = list(range(2, opts.vmax+1))
+    n1 = list(range(1, opts.vmax+1))
 if opts.n2max <= 0:
     n2 = list(range(9))+[9, 11, 15, 23, 39, 61]
     nn2 = len(n2)
@@ -362,6 +424,7 @@ SetVP(103)
 SetMS(3, 3)
 SetSE(opts.nse, opts.mse)
 SetBreit(opts.nbr, opts.mbr, -1, -1, opts.kbr)
+SetOption('structure:full_name', opts.nfc)
 
 PrintNucleus()
 PrintNucleus(1, p0+'a.iso')
@@ -401,17 +464,20 @@ elif opts.oc == 'gi':
     oc = gi
 elif opts.oc == 'gvi':
     oc = gv+gi
-elif opts.oc == 'ic' and opts.ic != '':
-    oc = opts.ic    
+elif opts.oc == 'ic':
+    if opts.ic != '':
+        oc = opts.ic
+    elif opts.cfg != '':
+        oc = 'g'
 
 if opts.nab == 0:
     opts.fab = 0.0
-if ir >= 0 or opts.rc == '':
+if (opts.ci == 0) and (ir >= 0 or opts.rc == ''):
     try:
         OptimizeRadial('g')
     except:
         exit(0)
-    SetBoundary(max(nmax,opts.imax)+opts.odn, eps, 1e30, opts.fab)
+    SetBoundary(max(abs(nmax),opts.imax)+opts.odn, eps, 1e30, opts.fab)
 
     ReinitRadial(0)
     SetRadialGrid(opts.nrg, 1.1, -1e30, 0.0, 1.0)
@@ -420,16 +486,32 @@ if ir >= 0 or opts.rc == '':
     SetPotentialMode(opts.om, 1e30, opts.opm)
     try:
         OptimizeRadial(oc)
+        if opts.mrr > 0:
+            RefineRadial(opts.mrr, 0, 0, 1)
     except:
+        print('error in optimize radial')
         exit(0)    
-    SetBoundary(max(nmax,opts.imax)+opts.odn, eps, 1e30, opts.fab, opts.nab, gc, '', 2, 10)
-else:
+    SetBoundary(max(abs(nmax),opts.imax)+opts.odn, eps, 1e30, opts.fab, opts.nab, gc, '', 2, 10)
+elif opts.ci == 0:
     Print('opt config: %s %d'%(opts.oc, opts.om))
     SetPotentialMode(opts.om, 1e30, opts.opm)
     try:
         OptimizeRadial(oc)
+        if opts.mrr > 0:
+            RefineRadial(opts.mrr, 0, 0, 1)
     except:
         exit(0)
+else:
+    Print('opt config: %s %d'%(opts.oc, opts.om))
+    if opts.ci > 1:
+        ConfigEnergy(0)
+    try:
+        OptimizeRadial(oc)
+    except:
+        exit(0)
+    if opts.ci > 1:
+        ConfigEnergy(1)
+    
 GetPotential(p0+'a.pot')
 SavePotential(p0+'b.pot')
 
@@ -466,10 +548,15 @@ if opts.nwi >= 0:
 if opts.mcc <= 0:
     opts.mcc = abs(opts.mcc)+max(opts.nmax, opts.imax)
 if opts.mcc > 1 or opts.mcc1 > 1:
-    if n <= 2:
-        bss = '1*1 2*1 3*1 4*1 5*1'
+    if opts.bs != '':
+        bss = opts.bs
     else:
-        bss = '2*1 3*1 4*1 5*1'
+        if n <= 2:
+            bss = '1*1 2*1 3*1 4*1 5*1'
+        elif n <= 28:
+            bss = '2*1 3*1 4*1 5*1'
+        else:
+            bss = '4*1 5*1'
     ga = ga + ['cc1', 'cc2']
     if opts.rc == '':
         if opts.mcc > 1:
@@ -481,25 +568,54 @@ if opts.mcc > 1 or opts.mcc1 > 1:
 if opts.nwi >= 0:
     nwi = max(nmax, opts.imax)+opts.nwi
     Config(33, '', ['cc1','cc2'], '', nwi, nwi)
-    
+    if len(gccn) > 0:
+        Config(33, '', gccn, '', nwi, nwi)
 ListConfig(p0+'a.cfg')
 
-if opts.ci > 0:    
+if opts.ci > 0:
+    WallTime('EN')
     Structure(p0+'b.en', p0+'b.ham', gc, ga[len(gc):], 1)
     BasisTable(p0+'a.bs')
     BasisTable(p0+'a', 10)
+    icc = []
+    if n <= 2:
+        bss = '1*1'
+    elif n <= 10:
+        bss = '2*1'
+    else:
+        bss = '3*1'
+    for m in range(nmax+1, max(opts.ice,opts.itr)+1):
+        gn = 'ic%d'%m
+        Config(-1, gn, gv, bss, m, m)            
+        Structure(p0+'b.en', [gn])
+        icc.append(gn)
     MemENTable(p0+'b.en')
     PrintTable(p0+'b.en', p0+'a.en')
-    TRTable(p0+'b.tr', gc[0:1], gc)
+    WallTime('TR')
+    TRTable(p0+'b.tr', gc, gc)
+    if opts.itr > 0:
+        for gn in icc:
+            TRTable(p0+'b.tr', gc, [gn])
     PrintTable(p0+'b.tr', p0+'a.tr')
+    WallTime('CE')
+    CETable(p0+'b.ce', gv, gc)
+    if opts.ice > 0:
+        for gn in icc:
+            CETable(p0+'b.ce', gv, [gn])
+    PrintTable(p0+'b.ce', p0+'a.ce')
     exit(0)
 
-TransitionMBPT(opts.ntr, 3)
 SetOption("mbpt:warntr", opts.warntr)
 SetOption("mbpt:ignoretr", opts.ignoretr)
 SetOption("mbpt:angzc", opts.azc)
 SetOption("mbpt:adjaz", opts.adjaz)
 SetOption("mbpt:angzm", opts.angzm)
+if opts.momp >= 0:
+    SetOption('mbpt:omp', opts.momp)
+if opts.fomp >= 0:
+    SetOption('mbpt:ompf', opts.fomp)
+if (opts.ccn >= 0):
+    SetOption('mbpt:ccn', '%sa.cc%d'%(p0,opts.ccn))
 
 if opts.gtr == 'gv':
     gt = gv
@@ -517,12 +633,28 @@ elif opts.gtr == 'gv3':
     gt = gv+gv1+gv2+gv3
 else:
     gt = gc
+ga = ga + gccn
 if ir >= 0:
     if opts.rmp != '':
         opts.rmp = p0+'a.mp'
-    if (opts.ntr > 0):
-        TransitionMBPT(p0+'b.tr', gt, gc)
-    StructureMBPT(opts.warn, opts.ignore)
+    if opts.warn >= 0:
+        SetOption('mbpt:warn', opts.warn)
+    if opts.ignore >= 0:
+        SetOption('mbpt:ignore', opts.ignore)
+    if opts.nwarn >= 0:
+        SetOption('mbpt:nwarn', opts.nwarn)
+    if opts.xwarn >= 0:
+        SetOption('mbpt:xwarn', opts.xwarn)
+    if opts.mwarn >= 0:
+        SetOption('mbpt:mwarn', opts.mwarn)
+    if opts.ewarn >= 0:
+        SetOption('mbpt:ewarn', opts.ewarn)
+    if opts.wwarn >= 0:
+        SetOption('mbpt:wwarn', opts.wwarn)
+    if opts.wmix >= 0:
+        SetOption('mbpt:wmix', opts.wmix)
+    if opts.nwmix >= 0:
+        SetOption('mbpt:nwmix', opts.nwmix)
     StructureMBPT(opts.rand, 0, opts.mcut0, opts.mcut1, opts.mcut2, opts.mcut3)
     mex = 0
     if (opts.pm == 2):
@@ -537,9 +669,61 @@ if ir >= 0:
         StructureMBPT('1s', opts.nk)
     if opts.nl >= 0:
         StructureMBPT('2*', opts.nl)
+    if opts.nm >= 0:
+        StructureMBPT('3*1', opts.nm)
+    if opts.nn >= 0:
+        StructureMBPT('4*1', opts.nn)
+    if opts.iex != '':
+        if opts.nex >= 0:
+            StructureMBPT(opts.iex, opts.nex)
+        elif opts.nex < -1:
+            StructureMBPT(opts.iex, [0, -1])
+    if opts.wex != '':
+        StructureMBPT(opts.wex, opts.dex)
     if opts.rh == '':
+        if opts.ccm <= opts.ccn and opts.ntr > 0:
+            TransitionMBPT(opts.ntr, 3)
+            TransitionMBPT(p0+'b.tr', gt, gc)
         StructureMBPT(p0+'b.en', [p0+'b.ham', p0+'b.ham0'],
                       ga, opts.kmax, ni, n2, len(gc), ncp, ir)
+        if opts.ccm > opts.ccn:
+            for i in range(opts.ccn+1, opts.ccm+1):
+                i1 = i-1
+                fn = '%sa.cc%d'%(p0,i1)
+                cs = 0
+                try:
+                    f = open(fn)
+                    a = f.readlines()
+                    f.close()
+                    cs = len(a)
+                except:
+                    pass
+                print('mbpt iter: %d/%d, cs=%d'%(i1, opts.ccm, cs))
+                if cs == 0:
+                    if opts.ntr > 0:
+                        TransitionMBPT(opts.ntr, 3)
+                        TransitionMBPT(p0+'b.tr', gt, gc)
+                        SetOption('mbpt:n3', -1)
+                        StructureMBPT(p0+'b.en', [p0+'b.ham', p0+'b.ham0'],
+                                      ga, opts.kmax, ni, n2, len(gc), ncp, ir)
+                    break
+                if opts.bas:
+                    BasisTable('%sc%02da.bs'%(p0,i1))
+                fn0 = '%sb.en'%p0
+                fn1 = '%sc%02db.en'%(p0,i1)
+                fn1a = '%sc%02da.en'%(p0,i1)
+                cmd = 'mv %s %s'%(fn0, fn1)
+                print(cmd)
+                os.system(cmd)
+                MemENTable(fn1)
+                PrintTable(fn1, fn1a)
+                ReinitStructure(1)
+                ReinitDBase(1)
+                Config(gccn[0], '@%sa.cc%d'%(p0,i1))
+                SetOption('mbpt:ccn', '%sa.cc%d'%(p0,i))
+                ListConfig(p0+'a.cfg')
+                StructureMBPT(p0+'b.en', [p0+'b.ham', p0+'b.ham0'],
+                              ga, opts.kmax, ni, n2, len(gc), ncp, ir)
     else:
         StructureMBPT(p0+'b.en', [p0+'b.ham', opts.rh],
                       '', opts.kmax, ni, n2, len(gc), ncp, ir)
@@ -565,6 +749,7 @@ else:
     else:
         StructureMBPT(mex)
     if (opts.ntr > 0):        
+        TransitionMBPT(opts.ntr, 3)
         TransitionMBPT(p0+'b.tr', gv, gc)
         if opts.rmp != '':
             opts.rmp = pref+'i00a.mp'
