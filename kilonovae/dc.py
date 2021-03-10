@@ -31,6 +31,7 @@ for n5d in range(3):
                     gs.append('4f%d.5d%d.5f%d.6s%d.6p%d.6d%d'%nn)
                     Config(gs[-1],'4f%d 5d%d 5f%d 6s%d 6p%d 6d%d'%nn)
 
+WallTime('opt')
 ConfigEnergy(0)
 OptimizeRadial(gs)
 ConfigEnergy(1)
@@ -39,8 +40,10 @@ GetPotential(p+'a.pot')
 Config(1, 'ge', gs, '4f1 5d1 5f1 6s1 6p1 6d1', 4, 6, 0, 5)
 ListConfig(p+'a.cfg')
 
+WallTime('en')
 gs.append('ge')
 Structure(p+'b.en', gs)
 
 MemENTable(p+'b.en')
 PrintTable(p+'b.en', p+'a.en')
+WallTime('done')
