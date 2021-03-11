@@ -1,0 +1,3 @@
+Configuration	Term	J	Level (eV)	Uncertainty (eV)	Reference
+"4f2.5s2.5p6"	"3H"	"4"	" 0.0000"	"0.0012"	"L4095"
+"Nd VI (4f2.5s2.5p5*)"	"Limit"	"---"	"[60.0]"	"0.3"	"L4095"
